@@ -1,7 +1,8 @@
-import { useState, useContext } from 'react';
+import { useState } from 'react';
 import styled from 'styled-components';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ExpenseContext } from '../contexts/ExpenseContext';
+import { useSelector, useDispatch } from 'react-redux';
+import { editExpense, deleteExpense } from '../redux/slices/expensesSlice';
 
 const Container = styled.div`
     max-width: 800px;
@@ -60,8 +61,9 @@ const BackButton = styled(Button)`
 
 export default function Detail() {
     const navigate = useNavigate();
+    const dispatch = useDispatch();
     const { id } = useParams();
-    const { expenses, setExpenses } = useContext(ExpenseContext);
+    const expenses = useSelector((state) => state.expenses);
 
     const selectedExpense = expenses.find((element) => element.id === id);
 
@@ -70,7 +72,7 @@ export default function Detail() {
     const [amount, setAmount] = useState(selectedExpense.amount);
     const [description, setDescription] = useState(selectedExpense.description);
 
-    const editExpense = () => {
+    const handleEdit = () => {
         const datePattern = /^\d{4}-\d{2}-\d{2}$/;
         if (!datePattern.test(date)) {
             alert('날짜를 YYYY-MM-DD 형식으로 입력해주세요.');
@@ -81,26 +83,20 @@ export default function Detail() {
             return;
         }
 
-        const newExpenses = expenses.map((expense) => {
-            if (expense.id !== id) {
-                return expense;
-            } else {
-                return {
-                    ...expense,
-                    date: date,
-                    item: item,
-                    amount: amount,
-                    description: description,
-                };
-            }
-        });
-        setExpenses(newExpenses);
+        const newExpense = {
+            id: id,
+            date: date,
+            item: item,
+            amount: amount,
+            description: description,
+        };
+
+        dispatch(editExpense(newExpense));
         navigate('/');
     };
 
-    const deleteExpense = () => {
-        const newExpenses = expenses.filter((expense) => expense.id !== id);
-        setExpenses(newExpenses);
+    const handleDelete = () => {
+        dispatch(deleteExpense({ id }));
         navigate('/');
     };
 
@@ -147,8 +143,8 @@ export default function Detail() {
                 />
             </InputGroup>
             <ButtonGroup>
-                <Button onClick={editExpense}>수정</Button>
-                <Button danger="true" onClick={deleteExpense}>
+                <Button onClick={handleEdit}>수정</Button>
+                <Button danger="true" onClick={handleDelete}>
                     삭제
                 </Button>
                 <BackButton onClick={() => navigate(-1)}>뒤로 가기</BackButton>
